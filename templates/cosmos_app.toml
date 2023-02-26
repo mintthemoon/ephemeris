@@ -191,15 +191,16 @@ snapshot-interval = {{ state_sync.snapshot_interval }}
 
 # snapshot-keep-recent specifies the number of recent snapshots to keep and serve (0 to keep all).
 snapshot-keep-recent = {{ state_sync.snapshot_keep_recent }}
-
+{% if wasm.is_some() %}
 ###############################################################################
 ###                            WASM Configuration                           ###
 ###############################################################################
 [wasm]
 
 # This is the maximum sdk gas (wasm and storage) that we allow for any x/wasm "smart" queries
-query_gas_limit = {{ wasm.query_gas_limit }}
+query_gas_limit = {{ wasm.as_ref().unwrap().query_gas_limit }}
 
 # This is the number of wasm vm instances we keep cached in memory for speed-up
 # Warning: this is currently unstable and may lead to crashes, best to keep for 0 unless testing locally
-lru_size = {{ wasm.lru_size }}
+lru_size = {{ wasm.as_ref().unwrap().lru_size }}
+{% endif %}

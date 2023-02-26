@@ -1,7 +1,10 @@
+use std::io::Read;
+
 use anyhow::Result;
 use askama::Template;
 use reqwest::blocking::get;
 use serde::{Serialize, Deserialize};
+use flate2::read::GzDecoder;
 
 #[derive(Serialize, Deserialize)]
 pub struct CosmosTelemetryConfig {
@@ -56,14 +59,14 @@ pub struct CosmosStateSyncConfig {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct WasmdWasmConfig {
+pub struct CosmosWasmConfig {
     pub query_gas_limit: u64,
     pub lru_size: u64,
 }
 
 #[derive(Template, Serialize, Deserialize)]
-#[template(path = "wasmd_app.toml", escape = "none")]
-pub struct WasmdAppConfig {
+#[template(path = "cosmos_app.toml", escape = "none")]
+pub struct CosmosAppConfig {
     pub minimum_gas_prices: String,
     pub pruning: String,
     pub pruning_keep_recent: u64,
@@ -82,7 +85,7 @@ pub struct WasmdAppConfig {
     pub grpc: CosmosGrpcConfig,
     pub grpc_web: CosmosGrpcWebConfig,
     pub state_sync: CosmosStateSyncConfig,
-    pub wasm: WasmdWasmConfig,
+    pub wasm: Option<CosmosWasmConfig>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -234,29 +237,36 @@ pub struct TendermintConfig {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct CosmwasmChainConfig {
-    pub app_config: WasmdAppConfig,
-    pub tendermint_config: TendermintConfig,
+pub struct CosmosChainConfig {
+    pub app: CosmosAppConfig,
+    pub tendermint: TendermintConfig,
     pub genesis_url: String,
 }
 
-impl CosmwasmChainConfig {
+impl CosmosChainConfig {
     pub fn get_app_config(&self) -> Result<String> {
-        self.app_config.render().map_err(anyhow::Error::from)
+        self.app.render().map_err(anyhow::Error::from)
     }
 
     pub fn get_tendermint_config(&self) -> Result<String> {
-        self.tendermint_config.render().map_err(anyhow::Error::from)
+        self.tendermint.render().map_err(anyhow::Error::from)
     }
 
     pub fn get_genesis(&self) -> Result<String> {
-        get(&self.genesis_url)?.text().map_err(anyhow::Error::from)
+        if self.genesis_url.ends_with(".gz") {
+            let mut d = GzDecoder::new(get(&self.genesis_url)?);
+            let mut s = String::new();
+            d.read_to_string(&mut s)?;
+            Ok(s)
+        } else {
+            get(&self.genesis_url)?.text().map_err(anyhow::Error::from)
+        }
     }
 }
 
-pub fn default_wasmd_config() -> CosmwasmChainConfig {
-    CosmwasmChainConfig {
-        app_config: WasmdAppConfig {
+pub fn default_wasmd_config() -> CosmosChainConfig {
+    CosmosChainConfig {
+        app: CosmosAppConfig {
             minimum_gas_prices: "0stake".to_string(),
             pruning: "nothing".to_string(),
             pruning_keep_recent: 0,
@@ -309,12 +319,12 @@ pub fn default_wasmd_config() -> CosmwasmChainConfig {
                 snapshot_interval: 2000,
                 snapshot_keep_recent: 3
             },
-            wasm: WasmdWasmConfig {
+            wasm: Some(CosmosWasmConfig {
                 query_gas_limit: 30000000,
                 lru_size: 0
-            },
+            }),
         },
-        tendermint_config: TendermintConfig {
+        tendermint: TendermintConfig {
             proxy_app: "tcp://127.0.0.1:26658".to_string(),
             moniker: "".to_string(),
             fast_sync: true,
@@ -428,20 +438,34 @@ pub fn default_wasmd_config() -> CosmwasmChainConfig {
     }
 }
 
-pub fn default_config(chain_id: &str) -> Option<CosmwasmChainConfig> {
+pub fn default_config(chain_id: &str) -> Option<CosmosChainConfig> {
     match chain_id {
         "kaiyo-1" => {
             let mut cfg = default_wasmd_config();
-            cfg.app_config.minimum_gas_prices = "0.00119ukuji,0.00150factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk,0.00150ibc/295548A78785A1007F232DE286149A6FF512F180AF5657780FC89C009E2C348F,0.000125ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2,0.00126ibc/47BD209179859CDE4A2806763D7189B6E6FE13A17880FE2B42DE1E6C1E329E23,0.00652ibc/3607EB5B5E64DD1C0E12E07F077FF470D5BC4706AFCBC98FE1BA960E5AE4CE07,617283951ibc/F3AA7EF362EC5E791FE78A0F4CCC69FEE1F9A7485EB1A8CAB3F6601C00522F10,0.000288ibc/EFF323CC632EC4F747C61BCE238A758EFDB7699C3226565F7C20DA06509D59A5,0.000125ibc/DA59C009A0B3B95E0549E6BF7B075C8239285989FF457A8EDDBB56F10B2A6986,0.00137ibc/A358D7F19237777AF6D8AD0E0F53268F8B18AE8A53ED318095C14D6D7F3B2DB5,0.0488ibc/4F393C3FCA4190C0A6756CE7F6D897D5D1BE57D6CCB80D0BC87393566A7B6602,78492936ibc/004EBF085BBED1029326D56BE8A2E67C08CECE670A94AC1947DF413EF5130EB2,964351ibc/1B38805B1C75352B28169284F96DF56BDEBD9E8FAC005BDCC8CF0378C82AA8E7".to_string();
-            cfg.tendermint_config.consensus.timeout_commit = "1500ms".to_string();
+            cfg.app.minimum_gas_prices = "0.00119ukuji,0.00150factory/kujira1qk00h5atutpsv900x202pxx42npjr9thg58dnqpa72f2p7m2luase444a7/uusk,0.00150ibc/295548A78785A1007F232DE286149A6FF512F180AF5657780FC89C009E2C348F,0.000125ibc/27394FB092D2ECCD56123C74F36E4C1F926001CEADA9CA97EA622B25F41E5EB2,0.00126ibc/47BD209179859CDE4A2806763D7189B6E6FE13A17880FE2B42DE1E6C1E329E23,0.00652ibc/3607EB5B5E64DD1C0E12E07F077FF470D5BC4706AFCBC98FE1BA960E5AE4CE07,617283951ibc/F3AA7EF362EC5E791FE78A0F4CCC69FEE1F9A7485EB1A8CAB3F6601C00522F10,0.000288ibc/EFF323CC632EC4F747C61BCE238A758EFDB7699C3226565F7C20DA06509D59A5,0.000125ibc/DA59C009A0B3B95E0549E6BF7B075C8239285989FF457A8EDDBB56F10B2A6986,0.00137ibc/A358D7F19237777AF6D8AD0E0F53268F8B18AE8A53ED318095C14D6D7F3B2DB5,0.0488ibc/4F393C3FCA4190C0A6756CE7F6D897D5D1BE57D6CCB80D0BC87393566A7B6602,78492936ibc/004EBF085BBED1029326D56BE8A2E67C08CECE670A94AC1947DF413EF5130EB2,964351ibc/1B38805B1C75352B28169284F96DF56BDEBD9E8FAC005BDCC8CF0378C82AA8E7".to_string();
+            cfg.tendermint.consensus.timeout_commit = "1500ms".to_string();
             cfg.genesis_url = "https://raw.githubusercontent.com/Team-Kujira/networks/master/mainnet/kaiyo-1.json".to_string();
             Some(cfg)
         },
         "harpoon-4" => {
             let mut cfg = default_wasmd_config();
-            cfg.app_config.minimum_gas_prices = "0.00125ukuji".to_string();
-            cfg.tendermint_config.consensus.timeout_commit = "1500ms".to_string();
+            cfg.app.minimum_gas_prices = "0.00125ukuji".to_string();
+            cfg.tendermint.consensus.timeout_commit = "1500ms".to_string();
             cfg.genesis_url = "https://raw.githubusercontent.com/Team-Kujira/networks/master/testnet/harpoon-4.json".to_string();
+            Some(cfg)
+        },
+        "cosmoshub-4" => {
+            let mut cfg = default_wasmd_config();
+            cfg.app.minimum_gas_prices = "0.0025uatom".to_string();
+            cfg.app.wasm = None;
+            cfg.genesis_url = "https://raw.githubusercontent.com/cosmos/mainnet/master/genesis/genesis.cosmoshub-4.json.gz".to_string();
+            Some(cfg)
+        },
+        "theta-testnet-001" => {
+            let mut cfg = default_wasmd_config();
+            cfg.app.minimum_gas_prices = "0.0025uatom".to_string();
+            cfg.app.wasm = None;
+            cfg.genesis_url = " https://github.com/cosmos/testnets/raw/master/public/genesis.json.gz".to_string();
             Some(cfg)
         },
         _ => None,

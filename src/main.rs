@@ -6,13 +6,12 @@ use std::io::Write;
 
 use anyhow::{Result, anyhow};
 use clap::{Parser, Subcommand};
-use config::CosmwasmChainConfig;
-use serde_json::{from_value, from_str, to_value, to_string_pretty};
+use serde_json::{from_value, from_str, to_value, to_string, to_string_pretty, Value};
 use json_patch::merge;
 use log::{info, error};
 use gethostname::gethostname;
 
-use crate::config::{default_config};
+use crate::config::{default_config, default_wasmd_config};
 
 #[derive(Parser)]
 #[command(name = "ephemeris", author = "mintthemoon <mint@mintthemoon.xyz>", version = "0.1.0")]
@@ -28,7 +27,7 @@ enum Commands {
     ConfigApp {
         /// chain id
         #[arg(short, long)]
-        chain: String,
+        chain: Option<String>,
         /// output directory
         #[arg(short, long)]
         output: Option<PathBuf>,
@@ -40,7 +39,7 @@ enum Commands {
     ConfigTendermint {
         /// chain id
         #[arg(short, long)]
-        chain: String,
+        chain: Option<String>,
         /// output directory
         #[arg(short, long)]
         output: Option<PathBuf>,
@@ -48,21 +47,42 @@ enum Commands {
         #[arg(long)]
         custom: Option<String>,
         /// node moniker
-        #[arg(long)]
+        #[arg(short, long)]
         moniker: Option<String>,
     },
     /// configure genesis.json
     ConfigGenesis {
         /// chain id
         #[arg(short, long)]
-        chain: String,
+        chain: Option<String>,
         /// output directory
         #[arg(short, long)]
         output: Option<PathBuf>,
         /// parameter overrides json
         #[arg(long)]
         custom: Option<String>,
+        /// custom genesis url
+        #[arg(short, long)]
+        genesis_url: Option<String>,
     },
+    // configure all supported chain files
+    Config {
+        /// chain id
+        #[arg(short, long)]
+        chain: Option<String>,
+        /// output directory
+        #[arg(short, long)]
+        output: Option<PathBuf>,
+        /// parameter overrides json
+        #[arg(long)]
+        custom: Option<String>,
+        /// node moniker
+        #[arg(short, long)]
+        moniker: Option<String>,
+        /// custom genesis url
+        #[arg(short, long)]
+        genesis_url: Option<String>,
+    }
 }
 
 fn write_file(path: &PathBuf, content: &str) -> Result<()> {
@@ -71,11 +91,14 @@ fn write_file(path: &PathBuf, content: &str) -> Result<()> {
     Ok(())
 }
 
-fn config_app(chain: &str, output: &Option<PathBuf>, custom: &Option<String>) -> Result<()> {
-    let default_cfg = default_config(chain).ok_or(anyhow!("chain not supported: {}", chain))?;
-    let cfg: CosmwasmChainConfig = match custom {
+fn config_app(chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<String>) -> Result<()> {
+    let default_cfg = match chain {
+        Some(c) => default_config(c).ok_or(anyhow!("chain not supported: {}", c))?,
+        None => default_wasmd_config(),
+    };
+    let cfg = match custom {
         Some(c) => {
-            let patch = from_str(&format!("{{\"app_config\": {}}}", c))?;
+            let patch = from_str(&format!("{{\"app\": {}}}", c))?;
             let mut base = to_value(default_cfg)?;
             merge(&mut base, &patch);
             info!("customized app config");
@@ -91,11 +114,14 @@ fn config_app(chain: &str, output: &Option<PathBuf>, custom: &Option<String>) ->
     Ok(())
 }
 
-fn config_tendermint(chain: &str, output: &Option<PathBuf>, custom: &Option<String>, moniker: &Option<String>) -> Result<()> {
-    let default_cfg = default_config(chain).ok_or(anyhow!("chain not supported: {}", chain))?;
-    let mut cfg: CosmwasmChainConfig = match custom {
+fn config_tendermint(chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<String>, moniker: &Option<String>) -> Result<()> {
+    let default_cfg = match chain {
+        Some(c) => default_config(c).ok_or(anyhow!("chain not supported: {}", c))?,
+        None => default_wasmd_config(),
+    };
+    let mut cfg = match custom {
         Some(c) => {
-            let patch = from_str(&format!("{{\"tendermint_config\": {}}}", c))?;
+            let patch = from_str(&format!("{{\"tendermint\": {}}}", c))?;
             let mut base = to_value(default_cfg)?;
             merge(&mut base, &patch);
             info!("customized tendermint config");
@@ -104,8 +130,8 @@ fn config_tendermint(chain: &str, output: &Option<PathBuf>, custom: &Option<Stri
         None => default_cfg,
     };
     match moniker {
-        Some(m) => { cfg.tendermint_config.moniker = m.clone(); },
-        None => { cfg.tendermint_config.moniker = gethostname().into_string().unwrap_or("node".to_string()); }
+        Some(m) => { cfg.tendermint.moniker = m.clone(); },
+        None => { cfg.tendermint.moniker = gethostname().into_string().unwrap_or("node".to_string()); }
     }
     let path = match output {
         Some(o) => o.join("config.toml"),
@@ -115,12 +141,16 @@ fn config_tendermint(chain: &str, output: &Option<PathBuf>, custom: &Option<Stri
     Ok(())
 }
 
-fn config_genesis(chain: &str, output: &Option<PathBuf>, custom: &Option<String>) -> Result<()> {
-    let cfg = default_config(chain).ok_or(anyhow!("chain not supported: {}", chain))?;
+fn config_genesis(chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<String>, genesis_url: &Option<String>) -> Result<()> {
+    let mut cfg = match chain {
+        Some(c) => default_config(c).ok_or(anyhow!("chain not supported: {}", c))?,
+        None => default_wasmd_config(),
+    };
     let path = match output {
         Some(o) => o.join("genesis.json"),
         None => PathBuf::new().join("genesis.json"),
     };
+    genesis_url.as_ref().map(|url| cfg.genesis_url = url.clone());
     let default_genesis = cfg.get_genesis()?;
     let genesis = match custom {
         Some(c) => {
@@ -136,18 +166,39 @@ fn config_genesis(chain: &str, output: &Option<PathBuf>, custom: &Option<String>
     Ok(())
 }
 
+fn config(chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<String>, moniker: &Option<String>, genesis_url: &Option<String>) -> Result<()> {
+    let customs = match custom {
+        Some(c) => {
+            let patch: Value = from_str(c)?;
+            (
+                patch.get("app").map(to_string).transpose()?,
+                patch.get("tendermint").map(to_string).transpose()?,
+                patch.get("genesis").map(to_string).transpose()?,
+            )
+        },
+        None => (None, None, None)
+    };
+    config_app(chain, output, &customs.0)?;
+    config_tendermint(chain, output, &customs.1, moniker)?;
+    config_genesis(chain, output, &customs.2, genesis_url)?;
+    Ok(())
+}
+
 fn main() {
     env_logger::init();
     let cli = Cli::parse();
     match &cli.command {
         Some(Commands::ConfigApp { chain, output, custom }) => {
-            config_app(&chain, output, custom).unwrap();
+            config_app(chain, output, custom).unwrap();
         },
         Some(Commands::ConfigTendermint { chain, output, custom, moniker }) => {
-            config_tendermint(&chain, output, custom, moniker).unwrap();
+            config_tendermint(chain, output, custom, moniker).unwrap();
         },
-        Some(Commands::ConfigGenesis { chain, output, custom }) => {
-            config_genesis(&chain, output, custom).unwrap();
+        Some(Commands::ConfigGenesis { chain, output, custom, genesis_url }) => {
+            config_genesis(chain, output, custom, genesis_url).unwrap();
+        },
+        Some(Commands::Config { chain, output, custom, moniker, genesis_url }) => {
+            config(chain, output, custom, moniker, genesis_url).unwrap();
         },
         None => {
             error!("missing command");
