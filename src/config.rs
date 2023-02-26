@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use askama::Template;
 use reqwest::blocking::get;
 use serde::{Serialize, Deserialize};
@@ -253,6 +253,9 @@ impl CosmosChainConfig {
     }
 
     pub fn get_genesis(&self) -> Result<String> {
+        if self.genesis_url == "" {
+            return Err(anyhow!("no genesis URL configured"));
+        }
         if self.genesis_url.ends_with(".gz") {
             let mut d = GzDecoder::new(get(&self.genesis_url)?);
             let mut s = String::new();

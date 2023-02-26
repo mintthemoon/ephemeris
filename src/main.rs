@@ -1,8 +1,9 @@
 mod config;
 
 use std::path::PathBuf;
-use std::fs::File;
+use std::fs::{read_to_string, File};
 use std::io::Write;
+use std::env;
 
 use anyhow::{Result, anyhow};
 use clap::{Parser, Subcommand};
@@ -64,6 +65,9 @@ enum Commands {
         /// custom genesis url
         #[arg(short, long)]
         genesis_url: Option<String>,
+        /// use existing genesis file
+        #[arg(long)]
+        genesis_file: Option<PathBuf>,
     },
     // configure all supported chain files
     Config {
@@ -82,6 +86,9 @@ enum Commands {
         /// custom genesis url
         #[arg(short, long)]
         genesis_url: Option<String>,
+        /// use existing genesis file
+        #[arg(long)]
+        genesis_file: Option<PathBuf>,
     }
 }
 
@@ -141,17 +148,22 @@ fn config_tendermint(chain: &Option<String>, output: &Option<PathBuf>, custom: &
     Ok(())
 }
 
-fn config_genesis(chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<String>, genesis_url: &Option<String>) -> Result<()> {
+fn config_genesis(
+    chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<String>, genesis_url: &Option<String>, genesis_file: &Option<PathBuf>,
+) -> Result<()> {
     let mut cfg = match chain {
         Some(c) => default_config(c).ok_or(anyhow!("chain not supported: {}", c))?,
         None => default_wasmd_config(),
+    };
+    genesis_url.as_ref().map(|url| cfg.genesis_url = url.clone());
+    let default_genesis = match genesis_file {
+        Some(f) => read_to_string(f)?,
+        None => cfg.get_genesis()?,
     };
     let path = match output {
         Some(o) => o.join("genesis.json"),
         None => PathBuf::new().join("genesis.json"),
     };
-    genesis_url.as_ref().map(|url| cfg.genesis_url = url.clone());
-    let default_genesis = cfg.get_genesis()?;
     let genesis = match custom {
         Some(c) => {
             let patch = from_str(&c)?;
@@ -166,7 +178,9 @@ fn config_genesis(chain: &Option<String>, output: &Option<PathBuf>, custom: &Opt
     Ok(())
 }
 
-fn config(chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<String>, moniker: &Option<String>, genesis_url: &Option<String>) -> Result<()> {
+fn config(
+    chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<String>, moniker: &Option<String>, genesis_url: &Option<String>, genesis_file: &Option<PathBuf>,
+) -> Result<()> {
     let customs = match custom {
         Some(c) => {
             let patch: Value = from_str(c)?;
@@ -180,28 +194,33 @@ fn config(chain: &Option<String>, output: &Option<PathBuf>, custom: &Option<Stri
     };
     config_app(chain, output, &customs.0)?;
     config_tendermint(chain, output, &customs.1, moniker)?;
-    config_genesis(chain, output, &customs.2, genesis_url)?;
+    config_genesis(chain, output, &customs.2, genesis_url, genesis_file)?;
     Ok(())
 }
 
-fn main() {
-    env_logger::init();
+fn cli_start() -> Result<()> {
     let cli = Cli::parse();
     match &cli.command {
         Some(Commands::ConfigApp { chain, output, custom }) => {
-            config_app(chain, output, custom).unwrap();
+            config_app(chain, output, custom)
         },
         Some(Commands::ConfigTendermint { chain, output, custom, moniker }) => {
-            config_tendermint(chain, output, custom, moniker).unwrap();
+            config_tendermint(chain, output, custom, moniker)
         },
-        Some(Commands::ConfigGenesis { chain, output, custom, genesis_url }) => {
-            config_genesis(chain, output, custom, genesis_url).unwrap();
+        Some(Commands::ConfigGenesis { chain, output, custom, genesis_url, genesis_file }) => {
+            config_genesis(chain, output, custom, genesis_url, genesis_file)
         },
-        Some(Commands::Config { chain, output, custom, moniker, genesis_url }) => {
-            config(chain, output, custom, moniker, genesis_url).unwrap();
+        Some(Commands::Config { chain, output, custom, moniker, genesis_url, genesis_file }) => {
+            config(chain, output, custom, moniker, genesis_url, genesis_file)
         },
         None => {
-            error!("missing command");
+            Err(anyhow!("missing command"))
         },
     }
+}
+
+fn main() -> Result<()> {
+    env::var("RUST_LOG").err().map(|_| env::set_var("RUST_LOG", "info"));
+    env_logger::init();
+    cli_start().map_err(|err| { error!("configuration failed: {}", err); err })
 }
