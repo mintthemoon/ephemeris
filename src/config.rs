@@ -1,11 +1,13 @@
 use std::path::PathBuf;
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::Write;
 
 use anyhow::Result;
 use askama::Template;
 use reqwest::blocking::get;
+use serde::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct CosmosTelemetryConfig {
     pub service_name: String,
     pub enabled: bool,
@@ -16,6 +18,7 @@ pub struct CosmosTelemetryConfig {
     pub global_labels: Vec<(String, String)>,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct CosmosApiConfig {
     pub enable: bool,
     pub swagger: bool,
@@ -27,6 +30,7 @@ pub struct CosmosApiConfig {
     pub enabled_unsafe_cors: bool,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct CosmosRosettaConfig {
     pub enable: bool,
     pub address: String,
@@ -36,28 +40,32 @@ pub struct CosmosRosettaConfig {
     pub offline: bool,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct CosmosGrpcConfig {
     pub enable: bool,
     pub address: String,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct CosmosGrpcWebConfig {
     pub enable: bool,
     pub address: String,
     pub enable_unsafe_cors: bool,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct CosmosStateSyncConfig {
     pub snapshot_interval: u64,
     pub snapshot_keep_recent: u64,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct WasmdWasmConfig {
     pub query_gas_limit: u64,
     pub lru_size: u64,
 }
 
-#[derive(Template)]
+#[derive(Template, Serialize, Deserialize)]
 #[template(path = "wasmd_app.toml", escape = "none")]
 pub struct WasmdAppConfig {
     minimum_gas_prices: String,
@@ -81,6 +89,7 @@ pub struct WasmdAppConfig {
     wasm: WasmdWasmConfig,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintRpcConfig {
     laddr: String,
     cors_allowed_origins: Vec<String>,
@@ -88,6 +97,7 @@ pub struct TendermintRpcConfig {
     cors_allowed_headers: Vec<String>,
     grpc_laddr: String,
     grpc_max_open_connections: u64,
+    #[serde(rename = "unsafe")]
     allow_unsafe: bool,
     max_open_connections: u64,
     max_subscription_clients: u64,
@@ -103,6 +113,7 @@ pub struct TendermintRpcConfig {
     pprof_laddr: String,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintP2pConfig {
     laddr: String,
     external_address: String,
@@ -127,6 +138,7 @@ pub struct TendermintP2pConfig {
     dial_timeout: String,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintMempoolConfig {
     version: String,
     recheck: bool,
@@ -142,6 +154,7 @@ pub struct TendermintMempoolConfig {
     ttl_num_blocks: u64,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintStatesyncConfig {
     enable: bool,
     rpc_servers: Vec<String>,
@@ -154,10 +167,12 @@ pub struct TendermintStatesyncConfig {
     chunk_fetchers: u64,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintFastsyncConfig {
     version: String,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintConsensusConfig {
     wal_file: String,
     timeout_propose: String,
@@ -175,15 +190,18 @@ pub struct TendermintConsensusConfig {
     peer_query_maj23_sleep_duration: String,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintStorageConfig {
     discard_abci_responses: bool,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintTransactionIndexConfig {
     indexer: String,
     psql_conn: String,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct TendermintInstrumentationConfig {
     prometheus: bool,
     prometheus_listen_addr: String,
@@ -191,7 +209,7 @@ pub struct TendermintInstrumentationConfig {
     namespace: String,
 }
 
-#[derive(Template)]
+#[derive(Template, Serialize, Deserialize)]
 #[template(path = "tendermint_config.toml", escape = "none")]
 pub struct TendermintConfig {
     proxy_app: String,
@@ -219,6 +237,7 @@ pub struct TendermintConfig {
     instrumentation: TendermintInstrumentationConfig,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct CosmwasmChainConfig {
     pub app_config: WasmdAppConfig,
     pub tendermint_config: TendermintConfig,
@@ -232,14 +251,12 @@ impl CosmwasmChainConfig {
     }
 
     pub fn render_tendermint_config(&self, path: &PathBuf) -> Result<()> {
-        File::create(path)?.write_all(self.app_config.render()?.as_bytes())?;
+        File::create(path)?.write_all(self.tendermint_config.render()?.as_bytes())?;
         Ok(())
     }
 
-    pub fn download_genesis(&self, path: &PathBuf) -> Result<()> {
-        let genesis_json = get(&self.genesis_url)?.text()?;
-        File::create(path)?.write_all(genesis_json.as_bytes())?;
-        Ok(())
+    pub fn download_genesis(&self) -> Result<String> {
+        get(&self.genesis_url)?.text().map_err(anyhow::Error::from)
     }
 }
 
