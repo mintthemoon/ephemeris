@@ -468,7 +468,7 @@ pub fn default_config(chain_id: &str) -> Option<CosmosChainConfig> {
             let mut cfg = default_wasmd_config();
             cfg.app.minimum_gas_prices = "0.0025uatom".to_string();
             cfg.app.wasm = None;
-            cfg.genesis_url = " https://github.com/cosmos/testnets/raw/master/public/genesis.json.gz".to_string();
+            cfg.genesis_url = "https://github.com/cosmos/testnets/raw/master/public/genesis.json.gz".to_string();
             Some(cfg)
         },
         _ => None,
