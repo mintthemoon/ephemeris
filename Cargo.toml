@@ -11,3 +11,6 @@ clap = { version = "4.1.6", features = ["derive"] }
 serde = "1.0.152"
 serde_json = { version = "1.0.93", features = ["preserve_order"] }
 json-patch = "0.3.0"
+log = "0.4.17"
+env_logger = "0.10.0"
+gethostname = "0.4.1"

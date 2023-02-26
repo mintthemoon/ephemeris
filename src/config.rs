@@ -1,7 +1,3 @@
-use std::path::PathBuf;
-use std::fs::File;
-use std::io::Write;
-
 use anyhow::Result;
 use askama::Template;
 use reqwest::blocking::get;
@@ -68,173 +64,173 @@ pub struct WasmdWasmConfig {
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "wasmd_app.toml", escape = "none")]
 pub struct WasmdAppConfig {
-    minimum_gas_prices: String,
-    pruning: String,
-    pruning_keep_recent: u64,
-    pruning_keep_every: u64,
-    pruning_interval: u64,
-    halt_height: u64,
-    halt_time: u64,
-    min_retain_blocks: u64,
-    inter_block_cache: bool,
-    index_events: Vec<String>,
-    iavl_cache_size: u64,
-    iavl_disable_fastnode: bool,
-    telemetry: CosmosTelemetryConfig,
-    api: CosmosApiConfig,
-    rosetta: CosmosRosettaConfig,
-    grpc: CosmosGrpcConfig,
-    grpc_web: CosmosGrpcWebConfig,
-    state_sync: CosmosStateSyncConfig,
-    wasm: WasmdWasmConfig,
+    pub minimum_gas_prices: String,
+    pub pruning: String,
+    pub pruning_keep_recent: u64,
+    pub pruning_keep_every: u64,
+    pub pruning_interval: u64,
+    pub halt_height: u64,
+    pub halt_time: u64,
+    pub min_retain_blocks: u64,
+    pub inter_block_cache: bool,
+    pub index_events: Vec<String>,
+    pub iavl_cache_size: u64,
+    pub iavl_disable_fastnode: bool,
+    pub telemetry: CosmosTelemetryConfig,
+    pub api: CosmosApiConfig,
+    pub rosetta: CosmosRosettaConfig,
+    pub grpc: CosmosGrpcConfig,
+    pub grpc_web: CosmosGrpcWebConfig,
+    pub state_sync: CosmosStateSyncConfig,
+    pub wasm: WasmdWasmConfig,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintRpcConfig {
-    laddr: String,
-    cors_allowed_origins: Vec<String>,
-    cors_allowed_methods: Vec<String>,
-    cors_allowed_headers: Vec<String>,
-    grpc_laddr: String,
-    grpc_max_open_connections: u64,
+    pub laddr: String,
+    pub cors_allowed_origins: Vec<String>,
+    pub cors_allowed_methods: Vec<String>,
+    pub cors_allowed_headers: Vec<String>,
+    pub grpc_laddr: String,
+    pub grpc_max_open_connections: u64,
     #[serde(rename = "unsafe")]
-    allow_unsafe: bool,
-    max_open_connections: u64,
-    max_subscription_clients: u64,
-    max_subscriptions_per_client: u64,
-    subscription_buffer_size: u64,
-    websocket_write_buffer_size: u64,
-    close_on_slow_client: bool,
-    timeout_broadcast_tx_commit: String,
-    max_body_bytes: u64,
-    max_header_bytes: u64,
-    tls_cert_file: String,
-    tls_key_file: String,
-    pprof_laddr: String,
+    pub allow_unsafe: bool,
+    pub max_open_connections: u64,
+    pub max_subscription_clients: u64,
+    pub max_subscriptions_per_client: u64,
+    pub subscription_buffer_size: u64,
+    pub websocket_write_buffer_size: u64,
+    pub close_on_slow_client: bool,
+    pub timeout_broadcast_tx_commit: String,
+    pub max_body_bytes: u64,
+    pub max_header_bytes: u64,
+    pub tls_cert_file: String,
+    pub tls_key_file: String,
+    pub pprof_laddr: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintP2pConfig {
-    laddr: String,
-    external_address: String,
-    seeds: String,
-    persistent_peers: String,
-    upnp: bool,
-    addr_book_file: String,
-    addr_book_strict: bool,
-    max_num_inbound_peers: u64,
-    max_num_outbound_peers: u64,
-    unconditional_peer_ids: String,
-    persistent_peers_max_dial_period: String,
-    flush_throttle_timeout: String,
-    max_packet_msg_payload_size: u64,
-    send_rate: u64,
-    recv_rate: u64,
-    pex: bool,
-    seed_mode: bool,
-    private_peer_ids: String,
-    allow_duplicate_ip: bool,
-    handshake_timeout: String,
-    dial_timeout: String,
+    pub laddr: String,
+    pub external_address: String,
+    pub seeds: String,
+    pub persistent_peers: String,
+    pub upnp: bool,
+    pub addr_book_file: String,
+    pub addr_book_strict: bool,
+    pub max_num_inbound_peers: u64,
+    pub max_num_outbound_peers: u64,
+    pub unconditional_peer_ids: String,
+    pub persistent_peers_max_dial_period: String,
+    pub flush_throttle_timeout: String,
+    pub max_packet_msg_payload_size: u64,
+    pub send_rate: u64,
+    pub recv_rate: u64,
+    pub pex: bool,
+    pub seed_mode: bool,
+    pub private_peer_ids: String,
+    pub allow_duplicate_ip: bool,
+    pub handshake_timeout: String,
+    pub dial_timeout: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintMempoolConfig {
-    version: String,
-    recheck: bool,
-    broadcast: bool,
-    wal_dir: String,
-    size: u64,
-    max_txs_bytes: u64,
-    cache_size: u64,
-    keep_invalid_txs_in_cache: bool,
-    max_tx_bytes: u64,
-    max_batch_bytes: u64,
-    ttl_duration: String,
-    ttl_num_blocks: u64,
+    pub version: String,
+    pub recheck: bool,
+    pub broadcast: bool,
+    pub wal_dir: String,
+    pub size: u64,
+    pub max_txs_bytes: u64,
+    pub cache_size: u64,
+    pub keep_invalid_txs_in_cache: bool,
+    pub max_tx_bytes: u64,
+    pub max_batch_bytes: u64,
+    pub ttl_duration: String,
+    pub ttl_num_blocks: u64,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintStatesyncConfig {
-    enable: bool,
-    rpc_servers: Vec<String>,
-    trust_height: u64,
-    trust_hash: String,
-    trust_period: String,
-    discovery_time: String,
-    temp_dir: String,
-    chunk_request_timeout: String,
-    chunk_fetchers: u64,
+    pub enable: bool,
+    pub rpc_servers: Vec<String>,
+    pub trust_height: u64,
+    pub trust_hash: String,
+    pub trust_period: String,
+    pub discovery_time: String,
+    pub temp_dir: String,
+    pub chunk_request_timeout: String,
+    pub chunk_fetchers: u64,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintFastsyncConfig {
-    version: String,
+    pub version: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintConsensusConfig {
-    wal_file: String,
-    timeout_propose: String,
-    timeout_propose_delta: String,
-    timeout_prevote: String,
-    timeout_prevote_delta: String,
-    timeout_precommit: String,
-    timeout_precommit_delta: String,
-    timeout_commit: String,
-    double_sign_check_height: u64,
-    skip_timeout_commit: bool,
-    create_empty_blocks: bool,
-    create_empty_blocks_interval: String,
-    peer_gossip_sleep_duration: String,
-    peer_query_maj23_sleep_duration: String,
+    pub wal_file: String,
+    pub timeout_propose: String,
+    pub timeout_propose_delta: String,
+    pub timeout_prevote: String,
+    pub timeout_prevote_delta: String,
+    pub timeout_precommit: String,
+    pub timeout_precommit_delta: String,
+    pub timeout_commit: String,
+    pub double_sign_check_height: u64,
+    pub skip_timeout_commit: bool,
+    pub create_empty_blocks: bool,
+    pub create_empty_blocks_interval: String,
+    pub peer_gossip_sleep_duration: String,
+    pub peer_query_maj23_sleep_duration: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintStorageConfig {
-    discard_abci_responses: bool,
+    pub discard_abci_responses: bool,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintTransactionIndexConfig {
-    indexer: String,
-    psql_conn: String,
+    pub indexer: String,
+    pub psql_conn: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct TendermintInstrumentationConfig {
-    prometheus: bool,
-    prometheus_listen_addr: String,
-    max_open_connections: u64,
-    namespace: String,
+    pub prometheus: bool,
+    pub prometheus_listen_addr: String,
+    pub max_open_connections: u64,
+    pub namespace: String,
 }
 
 #[derive(Template, Serialize, Deserialize)]
 #[template(path = "tendermint_config.toml", escape = "none")]
 pub struct TendermintConfig {
-    proxy_app: String,
-    moniker: String,
-    fast_sync: bool,
-    db_backend: String,
-    db_dir: String,
-    log_level: String,
-    log_format: String,
-    genesis_file: String,
-    priv_validator_key_file: String,
-    priv_validator_state_file: String,
-    priv_validator_laddr: String,
-    node_key_file: String,
-    abci: String,
-    filter_peers: bool,
-    rpc: TendermintRpcConfig,
-    p2p: TendermintP2pConfig,
-    mempool: TendermintMempoolConfig,
-    statesync: TendermintStatesyncConfig,
-    consensus: TendermintConsensusConfig,
-    fastsync: TendermintFastsyncConfig,
-    storage: TendermintStorageConfig,
-    tx_index: TendermintTransactionIndexConfig,
-    instrumentation: TendermintInstrumentationConfig,
+    pub proxy_app: String,
+    pub moniker: String,
+    pub fast_sync: bool,
+    pub db_backend: String,
+    pub db_dir: String,
+    pub log_level: String,
+    pub log_format: String,
+    pub genesis_file: String,
+    pub priv_validator_key_file: String,
+    pub priv_validator_state_file: String,
+    pub priv_validator_laddr: String,
+    pub node_key_file: String,
+    pub abci: String,
+    pub filter_peers: bool,
+    pub rpc: TendermintRpcConfig,
+    pub p2p: TendermintP2pConfig,
+    pub mempool: TendermintMempoolConfig,
+    pub statesync: TendermintStatesyncConfig,
+    pub consensus: TendermintConsensusConfig,
+    pub fastsync: TendermintFastsyncConfig,
+    pub storage: TendermintStorageConfig,
+    pub tx_index: TendermintTransactionIndexConfig,
+    pub instrumentation: TendermintInstrumentationConfig,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -245,17 +241,15 @@ pub struct CosmwasmChainConfig {
 }
 
 impl CosmwasmChainConfig {
-    pub fn render_app_config(&self, path: &PathBuf) -> Result<()> {
-        File::create(path)?.write_all(self.app_config.render()?.as_bytes())?;
-        Ok(())
+    pub fn get_app_config(&self) -> Result<String> {
+        self.app_config.render().map_err(anyhow::Error::from)
     }
 
-    pub fn render_tendermint_config(&self, path: &PathBuf) -> Result<()> {
-        File::create(path)?.write_all(self.tendermint_config.render()?.as_bytes())?;
-        Ok(())
+    pub fn get_tendermint_config(&self) -> Result<String> {
+        self.tendermint_config.render().map_err(anyhow::Error::from)
     }
 
-    pub fn download_genesis(&self) -> Result<String> {
+    pub fn get_genesis(&self) -> Result<String> {
         get(&self.genesis_url)?.text().map_err(anyhow::Error::from)
     }
 }
