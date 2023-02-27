@@ -6,6 +6,19 @@ Ephemeris manages many of the routine steps in setting up a node with simple, re
 
 Supported files include `app.toml`, `config.toml`, and `genesis.json`.
 
+**WARNING**: This software is not fully tested and may contain some bugs. Back up your configs and use at your own risk!
+
+## Installation
+### Compile with cargo
+```bash
+cargo install --git https://github.com/mintthemoon/ephemeris
+```
+
+### Run with docker
+```bash
+docker run -v $HOME/.kujira:/config ghcr.io/mintthemoon/ephemeris config -o /config <...>
+```
+
 ## Configure your node
 ### Supported chain
 ```bash

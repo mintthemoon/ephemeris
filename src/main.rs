@@ -162,6 +162,7 @@ fn config_tendermint(
         Some(m) => { cfg.tendermint.moniker = m.clone(); },
         None => { cfg.tendermint.moniker = gethostname().into_string().unwrap_or("node".to_string()); }
     }
+    info!("using moniker {}", cfg.tendermint.moniker);
     if *statesync {
         let rpc_url = match statesync_rpc {
             Some(r) => {
