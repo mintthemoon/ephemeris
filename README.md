@@ -11,7 +11,7 @@ Supported files include `app.toml`, `config.toml`, and `genesis.json`.
 ## Installation
 ### Compile with cargo
 ```bash
-cargo install --git https://github.com/mintthemoon/starsign
+cargo install starsign
 ```
 
 ### Run with docker
