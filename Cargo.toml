@@ -1,6 +1,13 @@
 [package]
 name = "ephemeris"
 version = "0.1.0"
+authors = ["mintthemoon <mint@mintthemoon.xyz>"]
+description = "Cosmos node configuration, simplified. 🚀🪐🌍"
+documentation = "https://github.com/mintthemoon/ephemeris/blob/main/README.md"
+homepage = "https://mintthemoon.xyz"
+repository = "https://github.com/mintthemoon/ephemeris"
+readme = "README.md"
+license-file = "LICENSE"
 edition = "2021"
 include = [
     "**/*.rs",
