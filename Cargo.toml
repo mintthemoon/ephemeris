@@ -15,3 +15,5 @@ log = "0.4.17"
 env_logger = "0.10.0"
 gethostname = "0.4.1"
 flate2 = "1.0"
+tendermint-rpc = { version = "0.27.0", features=["http-client"] }
+tokio = "1.25.0"

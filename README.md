@@ -9,7 +9,7 @@ Supported files include `app.toml`, `config.toml`, and `genesis.json`.
 ## Configure your node
 ### Supported chain
 ```bash
-ephemeris config -c kaiyo-1 -o $HOME/.kujira/config
+ephemeris config -c kaiyo-1 -o $HOME/.kujira/config --statesync
 ```
 Run `ephemeris config -h` for a full list of options.
 
