@@ -2,6 +2,11 @@
 name = "ephemeris"
 version = "0.1.0"
 edition = "2021"
+include = [
+    "**/*.rs",
+    "templates/*",
+    "Cargo.toml",
+]
 
 [dependencies]
 askama = "0.11.1"
