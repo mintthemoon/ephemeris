@@ -397,7 +397,7 @@ pub fn default_wasmd_config() -> CosmosChainConfig {
                 keep_invalid_txs_in_cache: false,
                 max_tx_bytes: 1048576,
                 max_batch_bytes: 0,
-                ttl_duration: "".to_string(),
+                ttl_duration: "0".to_string(),
                 ttl_num_blocks: 0,
             },
             statesync: TendermintStatesyncConfig {
@@ -405,7 +405,7 @@ pub fn default_wasmd_config() -> CosmosChainConfig {
                 rpc_servers: vec![],
                 trust_height: 0,
                 trust_hash: "".to_string(),
-                trust_period: "".to_string(),
+                trust_period: "168h".to_string(),
                 discovery_time: "15s".to_string(),
                 temp_dir: "".to_string(),
                 chunk_request_timeout: "10s".to_string(),
