@@ -369,7 +369,7 @@ pub fn default_wasmd_config() -> CosmosChainConfig {
                 seeds: "".to_string(),
                 persistent_peers: "".to_string(),
                 upnp: false,
-                addr_book_file: "".to_string(),
+                addr_book_file: "config/addr_book.json".to_string(),
                 addr_book_strict: true,
                 max_num_inbound_peers: 50,
                 max_num_outbound_peers: 50,
