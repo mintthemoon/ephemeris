@@ -311,11 +311,11 @@ pub fn default_wasmd_config() -> CosmosChainConfig {
             },
             grpc: CosmosGrpcConfig {
                 enable: true,
-                address: "tcp://127.0.0.1:9090".to_string(),
+                address: "127.0.0.1:9090".to_string(),
             },
             grpc_web: CosmosGrpcWebConfig {
                 enable: true,
-                address: "tcp://127.0.0.1:9091".to_string(),
+                address: "127.0.0.1:9091".to_string(),
                 enable_unsafe_cors: true
             },
             state_sync: CosmosStateSyncConfig {
