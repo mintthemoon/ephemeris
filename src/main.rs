@@ -17,7 +17,7 @@ use crate::config::{default_config, default_wasmd_config};
 use crate::rpc::BlockingRpc;
 
 #[derive(Parser)]
-#[command(name = "starsign", author = "mintthemoon <mint@mintthemoon.xyz>", version = "0.1.1")]
+#[command(name = "starsign", author = "mintthemoon <mint@mintthemoon.xyz>", version = "0.1.2")]
 #[command(about = "Configure your node environment")]
 struct Cli {
     #[command(subcommand)]
