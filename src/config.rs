@@ -459,6 +459,13 @@ pub fn default_config(chain_id: &str) -> Option<CosmosChainConfig> {
             cfg.genesis_url = "https://raw.githubusercontent.com/Team-Kujira/networks/master/testnet/harpoon-4.json".to_string();
             Some(cfg)
         },
+        "bitcanna-1" => {
+            let mut cfg = default_wasmd_config();
+            cfg.app.minimum_gas_prices = "0.001ubcna".to_string();
+            cfg.tendermint.statesync.rpc_servers = vec!["https://rpc-bitcanna.mintthemoon.xyz:443".to_string(), "https://rpc-bitcanna.mintthemoon.xyz:443".to_string()];
+            cfg.genesis_url = "https://raw.githubusercontent.com/BitCannaGlobal/bcna/main/genesis.json".to_string();
+            Some(cfg)
+        },
         "cosmoshub-4" => {
             let mut cfg = default_wasmd_config();
             cfg.app.minimum_gas_prices = "0.0025uatom".to_string();
