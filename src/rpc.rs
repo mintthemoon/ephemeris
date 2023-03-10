@@ -25,4 +25,8 @@ impl BlockingRpc {
     pub fn status(&self) -> Result<StatusResponse> {
         self.runtime.block_on(self.client.status()).map_err(Error::from)
     }
+
+    pub fn abci_query(&self, path: &str, msg: Vec<u8>) -> Result<Vec<u8>> {
+        Ok(self.runtime.block_on(self.client.abci_query(Some(path.to_string()), msg, None, false))?.value)
+    }
 }
