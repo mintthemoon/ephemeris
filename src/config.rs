@@ -1,10 +1,11 @@
 use std::io::Read;
 
-use anyhow::{Result, anyhow};
+use anyhow::{Error, Result, anyhow};
 use askama::Template;
-use reqwest::blocking::get;
+use reqwest::get;
 use serde::{Serialize, Deserialize};
-use flate2::read::GzDecoder;
+use async_compression::futures::bufread::GzipDecoder;
+use futures::{io::{BufReader, ErrorKind, self}, TryStreamExt, AsyncReadExt};
 
 #[derive(Serialize, Deserialize)]
 pub struct CosmosTelemetryConfig {
@@ -245,24 +246,30 @@ pub struct CosmosChainConfig {
 
 impl CosmosChainConfig {
     pub fn get_app_config(&self) -> Result<String> {
-        self.app.render().map_err(anyhow::Error::from)
+        self.app.render().map_err(Error::from)
     }
 
     pub fn get_tendermint_config(&self) -> Result<String> {
-        self.tendermint.render().map_err(anyhow::Error::from)
+        self.tendermint.render().map_err(Error::from)
     }
 
-    pub fn get_genesis(&self) -> Result<String> {
+    pub async fn get_genesis(&self) -> Result<String> {
         if self.genesis_url == "" {
             return Err(anyhow!("no genesis URL configured"));
         }
         if self.genesis_url.ends_with(".gz") {
-            let mut d = GzDecoder::new(get(&self.genesis_url)?);
+            let response = get(&self.genesis_url).await?;
+            let mut d = GzipDecoder::new(BufReader::new(
+                response
+                    .bytes_stream()
+                    .map_err(|e| io::Error::new(ErrorKind::Other, e))
+                    .into_async_read()
+            ));
             let mut s = String::new();
-            d.read_to_string(&mut s)?;
+            d.read_to_string(&mut s).await?;
             Ok(s)
         } else {
-            get(&self.genesis_url)?.text().map_err(anyhow::Error::from)
+            get(&self.genesis_url).await?.text().await.map_err(Error::from)
         }
     }
 }

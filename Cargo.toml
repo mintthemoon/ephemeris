@@ -11,6 +11,7 @@ license = "MIT"
 edition = "2021"
 include = [
     "**/*.rs",
+    "data/*",
     "templates/*",
     "Cargo.toml",
 ]
@@ -18,7 +19,7 @@ include = [
 [dependencies]
 askama = "0.11.1"
 anyhow = { version = "1.0" }
-reqwest = { version = "0.11.14", features = ["blocking"] }
+reqwest = { version = "0.11.14", features = ["stream"] }
 clap = { version = "4.1.6", features = ["derive"] }
 serde = "1.0.152"
 serde_json = { version = "1.0.93", features = ["preserve_order"] }
@@ -26,6 +27,9 @@ json-patch = "0.3.0"
 log = "0.4.17"
 env_logger = "0.10.0"
 gethostname = "0.4.1"
-flate2 = "1.0"
 tendermint-rpc = { version = "0.27.0", features=["http-client"] }
 tokio = "1.25.0"
+docker-api = "0.13.0"
+futures = "0.3.27"
+lazy_static = "1.4.0"
+async-compression = { version = "0.3.15", features = ["futures-io", "gzip"] }
